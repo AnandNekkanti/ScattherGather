@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:ftp="http://www.mulesoft.org/schema/mule/ftp"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ftp http://www.mulesoft.org/schema/mule/ftp/current/mule-ftp.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="725c8835-e0ef-4608-96ad-37aeff142d78" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="89aa21e9-49c7-40f9-9b2c-a4c89f86dc58" >
+		<http:request-connection host="jsonplaceholder.typicode.com" />
+	</http:request-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="77747b4e-ce77-4ef9-9ad2-990bf8824f09" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="1991" database="user_details"/>
+	</db:config>
+	<flow name="scatther_gatherFlow_Success" doc:id="9991b41d-216c-46f2-b588-e07a124c43e5" >
+		<http:listener doc:name="Listener" doc:id="0759e37b-d52b-4ff1-be1c-4cbb804cdc45" config-ref="HTTP_Listener_config" path="/sg"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="4f64b114-3cff-4dfa-beeb-b5457f33fe77" >
+			<route >
+				<http:request method="GET" doc:name="Request" doc:id="14581c85-6799-46eb-82e1-9ef212187d17" config-ref="HTTP_Request_configuration" path="/users"/>
+			</route>
+			<route >
+				<db:select doc:name="Select" doc:id="0578c020-0a96-418e-962a-998836408b88" config-ref="Database_Config">
+					<db:sql ><![CDATA[Select * from user_details.userdetails]]></db:sql>
+				</db:select>
+			</route>
+			<route >
+				<file:read doc:name="Read" doc:id="eb55b497-aeb2-4675-a83c-059aaf36849c" path="C:\Users\nekka\Desktop\Empdetails.txt"/>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Transform Message" doc:id="16f68ddc-baae-46d4-b49b-7050676b6c80" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	WebResponse: payload."0".payload,
+	DBResponse: payload."1".payload,
+	FileResponse: payload."2".payload
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="Failure" doc:id="00150b23-1691-4aaa-ae6c-ce704c7269c6" >
+		<http:listener doc:name="Listener" doc:id="4095e02b-4505-4f10-a2f0-61b502dcc04d" config-ref="HTTP_Listener_config" path="/sgf" />
+		<scatter-gather doc:name="Copy_of_Scatter-Gather" doc:id="a10d144a-d2c9-4182-87d6-933d8909fdfd" >
+			<route >
+				<http:request method="GET" doc:name="Copy_of_Request" doc:id="147c6336-4b40-45c4-b87b-822a937077dc" config-ref="HTTP_Request_configuration" path="/users" />
+			</route>
+			<route >
+				<db:select doc:name="Copy_of_Select" doc:id="4d43b351-33db-42cd-b40b-4f886be7c68d" config-ref="Database_Config" >
+					<db:sql ><![CDATA[Select * from user_details.userdetails]]></db:sql>
+				</db:select>
+			</route>
+			<route >
+				<file:read doc:name="Copy_of_Read" doc:id="24d2c8a7-db69-4c37-b04d-6b682311a1b6" path="C:\Users\nekka\Desktop\tt.txt" />
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Copy_of_Transform Message" doc:id="a1a98971-3985-4926-8067-2dd658dadb82" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	WebResponse: payload."0".payload,
+	DBResponse: payload."1".payload,
+	FileResponse: payload."2".payload
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
